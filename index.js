@@ -1,5 +1,7 @@
 const inquirer = require('inquirer');
 
+const mysql = require('mysql2');
+
 const questions = {
     name: "question",
     type: "list",
@@ -16,9 +18,34 @@ const questions = {
         "Update Employee Manager",
         "Update Employes Role",
         "Delete Departments",
-        "Delete Role",
-        "Delete Employee",
+        "Delete Roles",
+        "Delete Employees",
         "view bubget of Department",
-        "Quit"
+        "Quit",
     ]
 }
+
+const connection = mysql.createConnection(
+    {
+        host: "localhost",
+        user: "root",
+        password: "123456789",
+        database: "employee_db",
+    },
+    console.log("connected to the employee_db database")
+);
+
+connection.connect( err => {
+    if(err) {
+        throw err
+    } else {
+        start();
+    }
+})
+
+
+const start = () => {
+    inquirer.prompt(questions)
+}
+
+
