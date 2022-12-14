@@ -17,17 +17,15 @@ const questions = {
         "Add Employee",
         "Update Employee Manager",
         "Update Employes Role",
-        "Delete Departments",
-        "Delete Roles",
-        "Delete Employees",
-        "view bubget of Department",
+        "Delete Department",
+        "Delete Role",
+        "Delete Employee",
+        "View bubget of Department",
         "Quit",
     ]
 }
 
-
-
-const connection = mysql.createConnection(
+const db = mysql.createConnection(
     {
         host: "localhost",
         user: "root",
@@ -37,7 +35,7 @@ const connection = mysql.createConnection(
     console.log("connected to the employee_db database")
 );
 
-connection.connect( err => {
+db.connect( err => {
     if(err) {
         throw err
     } else {
@@ -47,9 +45,104 @@ connection.connect( err => {
 
 
 const start = () => {
-    inquirer.prompt(questions).then(answer => {
-        console.log(answer.question)
+    inquirer.prompt(questions)
+    .then(answer => {
+        switch(answer.question) {
+            case "View All Departments":
+                viewAllDepartments();
+                break;
+            case "View All Roles":
+                viewAllRoles();
+                break;
+            case "View All Employees":
+                viewAllEmployees();
+                break;
+            case "View Employee by Manager":
+                viewEmployeeByManager();
+                break;
+            case "View Employee by Department":
+                viewEmployeeByDepartment();
+                break;
+            case "Add Department":
+                addDepartment();
+                break;
+            case "Add Role":
+                addRole();
+                break;
+            case "Add Employee":
+                addEmployee();
+                break;
+            case "Update Employee Manager":
+                updateEmployeeManager();
+                break;
+            case "Update Employes Role":
+                updateEmployeeRole();
+                break;
+            case "Delete Department":
+                deleteDepartment();
+                break;
+            case "Delete Role":
+                deleteRole();
+                break;
+            case "Delete Employee":
+                deleteEmployee();
+                break;
+            case "View bubget of Department":
+                viewBubgetDepartment();
+                break;
+            case "Quit":
+                process.exit();
+        }
+    })
+
+}
+
+function viewAllDepartments() {
+    const sql = `SELECT * FROM department`
+    db.query(sql, (err, result) => {
+        console.table(result);
+        start()
     })
 }
 
+function viewAllRoles() {
+    const sql = `SELECT * FROM role`
+    db.query(sql, (err,result) => {
+        console.table(result)
+        start()
+    })
+}
 
+function viewAllEmployees() {
+    const sql = `SELECT * FROM employee`
+    db.query(sql, (err,result) => {
+        console.table(result)
+        start()
+    })
+}
+
+function viewEmployeeByDepartment() {
+    const sql = `SELECT * FROM department`
+    db.query(sql, (err,results) => {
+        inquirer.prompt({
+            name: "department",
+            type: "list",
+            message: "Which department you want to view",
+            choices: results
+        })
+        // find id of department
+            .then(answer => {
+                for(result of results) {
+                    if(result.name === answer.department) {
+                        console.log(result.id)
+                        db.query(`SELECT employee.first_name, employee.last_name, role.title, role.salary, department.name FROM employee INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON role.department_id = department.id WHERE department.id = ?`, result.id, (err,result) => {
+                            console.table(result);
+                            start()
+                        })
+                    }
+                }
+                
+            })
+    })
+
+}
