@@ -137,12 +137,139 @@ function viewEmployeeByDepartment() {
                         console.log(result.id)
                         db.query(`SELECT employee.first_name, employee.last_name, role.title, role.salary, department.name FROM employee INNER JOIN role ON role.id = employee.role_id INNER JOIN department ON role.department_id = department.id WHERE department.id = ?`, result.id, (err,result) => {
                             console.table(result);
-                            start()
                         })
                     }
                 }
-                
+                start()
             })
     })
 
+}
+
+function addDepartment() {
+    inquirer.prompt({
+        name: "departmentName",
+        type: "input",
+        message: "What is department's name:"
+    })
+    .then( answer => {
+        const sql = `INSERT INTO department (name) VALUES (?)`
+        db.query(sql, answer.departmentName, (err,result) => {
+            console.log("Success!");
+            start();
+        })
+    })
+}
+
+function addRole() {
+    db.query("SELECT * FROM department", (err,results) => {
+        inquirer.prompt([
+            {
+                name: "title",
+                type: "input",
+                message: "What is the title of the role?"
+            },
+            {
+                name: "salary",
+                type: "input",
+                message: "What is the salary of the role?"
+            },
+            {
+                name: "departmentName",
+                type: "list",
+                message: "Which department will add this role?",
+                choices: results
+            },
+        ])
+        .then( answer => {
+            // find id department 
+            results.forEach(result => {
+                if(result.name === answer.departmentName) {
+                    db.query(`INSERT INTO role (title, salary, department_id) VALUES (?, ?, ?)`, [answer.title, answer.salary, result.id]);
+                    console.log("Success!");
+                    start();
+                }
+            })
+        })
+    })
+}
+
+function addEmployee() {
+    db.query(`SELECT title FROM role`, (err,roleResults) => {
+        const roles = roleResults.map(role => {
+            return role.title
+        });
+        db.query(`SELECT * FROM employee`, (err, employeeResults) => {
+
+            const employees = employeeResults.map(employee => {
+                return employee.first_name + " " + employee.last_name
+            })
+            inquirer.prompt([
+                {
+                    name: "first_name",
+                    type: "input",
+                    message: "what is the employee's first name"
+                },
+                {
+                    name: "last_name",
+                    type: "input",
+                    message: "what is the employee's last name"
+                },
+                {
+                    name: "roleTitle",
+                    type: "list",
+                    message: "What is the employee's role",
+                    choices: roles
+                },
+                {
+                    name: "manager",
+                    type: "list",
+                    message: "what is the emloyee's manager",
+                    choices: employees
+                }
+            ])
+            .then( answer => {
+                // find role id when match role title
+                var role_id;
+                
+                for(let i = 0; i < roleResults.lenght; i++) {
+                    if(answer.roleTitle === roleResults[i].title) {
+                        role_id = roleResults[i].id
+                        console.log("answer.roleTitle")
+                    };
+                }
+
+                // find manager id when match with chosen employee name
+                // var managerID
+                // for(var i = 0; i < employeeResults.lenght; i++) {
+                //     if(answer.manager === employees[i]) {
+                //         managerID = employeeResults[i].id
+                //         console.log(answer.manager)
+                //     }
+                // };
+            })
+        })
+    })
+}
+
+function deleteRole() {
+    db.query(`SELECT * FROM role`, (err,results) => {
+        // put role.title into arr
+        var roleResults = []
+        results.forEach(result => {
+            roleResults.push(result.title)
+        })
+        inquirer.prompt({
+            name: "role",
+            type: "list",
+            message: "Which role you want to delete?",
+            choices: roleResults
+        })
+        // Delete ROle
+        .then(answer => {
+            db.query(`DELETE FROM role WHERE title = ?`, answer.role)
+            console.log("Success")
+            start()
+        })
+    })
 }
