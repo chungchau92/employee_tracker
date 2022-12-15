@@ -121,6 +121,30 @@ function viewAllEmployees() {
     })
 }
 
+function viewEmployeeByManager() {
+    db.query(`SELECT * FROM employee`, (err,employeeResults) => {
+        const employees = employeeResults.map(employee => {
+            return employee.first_name + " " + employee.last_name;
+        });
+        inquirer.prompt({
+            name: "employeeName",
+            type: "list",
+            message: "Who manager want to choose",
+            choices: employees
+        }).then(answer => {
+            let managerID;
+            for(var i = 0; i < employeeResults.length; i++) {
+                if(answer.employeeName === (employeeResults[i].first_name + " " + employeeResults[i].last_name)) {
+                    managerID = employeeResults[i].id;
+                };
+            }
+            db.query(`SELECT employee.first_name, employee.last_name, role.title FROM employee JOIN role ON employee.role_id = role.id WHERE employee.manager_id = ?`, managerID, (err,result) => {
+                console.table(result);
+            });
+        })  
+    })
+};
+
 function viewEmployeeByDepartment() {
     const sql = `SELECT * FROM department`
     db.query(sql, (err,results) => {
@@ -195,14 +219,14 @@ function addRole() {
 }
 
 function addEmployee() {
-    db.query(`SELECT title FROM role`, (err,roleResults) => {
+    db.query(`SELECT * FROM role`, (err,roleResults) => {
         const roles = roleResults.map(role => {
             return role.title
         });
         db.query(`SELECT * FROM employee`, (err, employeeResults) => {
-
-            const employees = employeeResults.map(employee => {
-                return employee.first_name + " " + employee.last_name
+            const employees = ['None']
+            employeeResults.map(employee => {
+                return employees.push(employee.first_name + " " + employee.last_name);
             })
             inquirer.prompt([
                 {
@@ -231,22 +255,25 @@ function addEmployee() {
             .then( answer => {
                 // find role id when match role title
                 var role_id;
-                
-                for(let i = 0; i < roleResults.lenght; i++) {
+                for( var i = 0; i < roleResults.length; i++) {
                     if(answer.roleTitle === roleResults[i].title) {
                         role_id = roleResults[i].id
-                        console.log("answer.roleTitle")
-                    };
+                    }
                 }
-
                 // find manager id when match with chosen employee name
-                // var managerID
-                // for(var i = 0; i < employeeResults.lenght; i++) {
-                //     if(answer.manager === employees[i]) {
-                //         managerID = employeeResults[i].id
-                //         console.log(answer.manager)
-                //     }
-                // };
+                let managerID;
+                for( var i = 0; i < employeeResults.length; i++) {
+                    if(answer.manager === (employeeResults[i].first_name+ " " + employeeResults[i].last_name)) {
+                        managerID = employeeResults[i].id
+                        // if choose none for manager's name is set manager id to null
+                    } else if (answer.manager === `None`) {
+                        managerID = null
+                    }
+                }
+                
+                db.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUE (?, ?, ?, ?)`, [answer.first_name, answer.last_name, role_id, managerID])
+                console.log(" \n Success! \n");
+                start()
             })
         })
     })
