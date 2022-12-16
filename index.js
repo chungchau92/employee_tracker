@@ -114,7 +114,7 @@ function viewAllRoles() {
 }
 
 function viewAllEmployees() {
-    const sql = `SELECT * FROM employee`
+    const sql = `SELECT employee.id, employee.first_name, employee.last_name, employee.role_id, employee.manager_id,role.title FROM employee JOIN role ON employee.role_id = role.id`
     db.query(sql, (err,result) => {
         console.table(result)
         start()
@@ -278,6 +278,105 @@ function addEmployee() {
         })
     })
 }
+
+function updateEmployeeManager() {
+    db.query(`SELECT * FROM employee`, (err,employeeResults) => {
+        let employees = employeeResults.map(employee => {
+            return employee.first_name + " " + employee.last_name
+        })
+        
+        inquirer.prompt(
+            {
+                name: "employeeName",
+                type: "list",
+                message: "which emoloyee you want to choose",
+                choices: employees
+            }  
+        ).then(answer => {
+            // find emloyee ID
+            let emloyeeID;
+            for(var i = 0; i < employeeResults.length; i++) {
+                if(answer.employeeName === employees[i]) {
+                    emloyeeID = employeeResults[i].id;
+                }
+            }
+            let answerEmployee = answer;
+            // find employee Name do not chosen 
+            let managers = employees.filter( e => {
+                if(e !== answerEmployee.employeeName){
+                    return e
+                }
+            })
+            managers.push("None")
+            inquirer.prompt(
+                    {
+                    name: "managerName",
+                    type: "list",
+                    message: "which manager you want to choose for selected employee",
+                    choices: managers
+                }
+            )
+            .then(answer => {
+                let managerID
+                for(var i = 0; i < employeeResults.length; i++) {
+                    if(answer.managerName === employees[i]) {
+                        managerID = employeeResults[i].id
+                    } else if(answer.managerName === "None") {
+                        managerID = null;
+                    }
+                }
+                
+                db.query(`UPDATE employee SET manager_id = ? WHERE id = ?`, [managerID,emloyeeID]);
+                console.log("\n Success \n");
+                start()
+            })
+        })
+    })
+}
+
+function updateEmployeeRole() {
+    db.query(`SELECT * FROM employee`, (err,employeeResults) => {
+        let employees = employeeResults.map(employee => {
+            return employee.first_name + " " + employee.last_name;
+        })
+        db.query(`SELECT * FROM role`, (err, roleResults) => {
+            let roles = roleResults.map(role => {
+                return role.title;
+            })
+            inquirer.prompt([
+                {
+                    name: "employeeName",
+                    type: "list",
+                    message: "which employee you want to choose?",
+                    choices: employees
+                },
+                {
+                    name: "roleTitle",
+                    type: "list",
+                    message: "Which role title you want to select?",
+                    choices: roles
+                }
+            ])
+            .then(answer => {
+                let emloyeeID;
+                for(var i = 0; i < employeeResults.length; i++) {
+                    if(answer.employeeName === employees[i]) {
+                        emloyeeID = employeeResults[i].id
+                    }
+                }
+                let roleID;
+                for(var i = 0; i < roleResults.length; i++) {
+                    if( answer.roleTitle === roles[i]) {
+                        roleID = roleResults[i].id
+                    }
+                }
+                db.query(`UPDATE employee SET role_id = ? WHERE id = ?`, [roleID, emloyeeID]);
+                console.log("\n Success \n");
+                start()
+            })
+        })
+    })
+};
 
 function deleteRole() {
     db.query(`SELECT * FROM role`, (err,results) => {
