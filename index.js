@@ -378,6 +378,23 @@ function updateEmployeeRole() {
     })
 };
 
+function deleteDepartment() {
+    db.query(`SELECT * FROM department`, (err,departmentResult) => {
+        inquirer.prompt({
+            name: "departmentName",
+            type: "list",
+            message: "which department you want to delete",
+            choices: departmentResult
+        })
+        .then(answer => {
+            console.log(answer.departmentName)
+            db.query(`DELETE FROM department WHERE name = ?`, answer.departmentName)
+            console.log("\n Success \n");
+            start()
+        })
+    })
+};
+
 function deleteRole() {
     db.query(`SELECT * FROM role`, (err,results) => {
         // put role.title into arr
@@ -393,8 +410,32 @@ function deleteRole() {
         })
         // Delete ROle
         .then(answer => {
+            console.log(answer.role)
             db.query(`DELETE FROM role WHERE title = ?`, answer.role)
-            console.log("Success")
+            console.log("\n Success \n");
+            start()
+        })
+    })
+};
+
+function deleteEmployee() {
+    db.query(`SELECT * FROM employee`, (err, employeeResults) => {
+        let employees = employeeResults.map(employee => {
+            return employee.first_name + " " + employee.last_name;
+        })
+        inquirer.prompt({
+            name: "employeeName",
+            type: "list",
+            message: "who employee you want to delete",
+            choices: employees
+        })
+        .then(answer => {
+            for(employee of employeeResults) {
+                if(answer.employeeName === employee.first_name + " " + employee.last_name) {
+                    db.query(`DELETE FROM employee WHERE first_name = ? AND last_name = ?`, [employee.first_name, employee.last_name]);
+                    console.log("\n Success \n");
+                }
+            }
             start()
         })
     })
