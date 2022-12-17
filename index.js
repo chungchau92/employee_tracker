@@ -440,3 +440,26 @@ function deleteEmployee() {
         })
     })
 }
+
+function viewBubgetDepartment() {
+    db.query(`SELECT * FROM department`, (err,departmentResults) => {
+        inquirer.prompt({
+            name: "departmentName",
+            type: "list",
+            message: "Which department you want to view bubget",
+            choices: departmentResults
+        })
+        .then(answer => {
+            let departmentId
+            for(department of departmentResults) {
+                if(answer.departmentName === department.name) {
+                    departmentId = department.id
+                }
+            }
+            db.query(`SELECT department.id, department.name, sum(role.salary) AS department_Bubget FROM department JOIN role ON department.id = role.department_id WHERE department.id = "?"`, departmentId, (err, result) => {
+                console.table(result);
+                start()
+            })
+        })
+    })
+}
